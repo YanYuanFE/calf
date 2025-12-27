@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { X, Download, Loader2, ArrowDownCircle } from 'lucide-react'
+import { X, Download, Loader2, ArrowDownCircle, CheckCircle } from 'lucide-react'
 
 interface UpdateInfo {
   version: string
@@ -29,14 +29,31 @@ declare global {
 export function UpdateDialog({ open, onClose }: UpdateDialogProps) {
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
   const [downloadProgress, setDownloadProgress] = useState(0)
-  const [status, setStatus] = useState<'checking' | 'available' | 'downloading' | 'downloaded' | 'error'>('checking')
+  const [status, setStatus] = useState<'checking' | 'available' | 'downloading' | 'downloaded' | 'error' | 'upToDate'>('checking')
 
   useEffect(() => {
     if (!open) return
 
+    // 超时处理：10秒后显示错误
+    const timeoutId = setTimeout(() => {
+      if (status === 'checking') {
+        setStatus('error')
+      }
+    }, 10000)
+
     window.api.checkForUpdates()
 
+    const handleUpdateNotAvailable = (..._args: unknown[]) => {
+      clearTimeout(timeoutId)
+      const info = _args[1] as UpdateInfo | undefined
+      if (info) {
+        setUpdateInfo(info)
+      }
+      setStatus('upToDate')
+    }
+
     const handleUpdateAvailable = (..._args: unknown[]) => {
+      clearTimeout(timeoutId)
       const info = _args[1] as UpdateInfo | undefined
       if (info) {
         setUpdateInfo(info)
@@ -44,30 +61,41 @@ export function UpdateDialog({ open, onClose }: UpdateDialogProps) {
       }
     }
 
-    window.electron.on('update-available', handleUpdateAvailable)
-    window.electron.on('update-download-progress', (..._args: unknown[]) => {
+    const handleDownloadProgress = (..._args: unknown[]) => {
       const progress = _args[1] as { percent: number } | undefined
       if (progress) {
         setDownloadProgress(Math.round(progress.percent))
       }
-    })
-    window.electron.on('update-downloaded', () => {
+    }
+
+    const handleUpdateDownloaded = () => {
       setStatus('downloaded')
-    })
-    window.electron.on('update-error', () => {
+    }
+
+    const handleUpdateError = () => {
+      clearTimeout(timeoutId)
       setStatus('error')
-    })
+    }
+
+    window.electron.on('update-available', handleUpdateAvailable)
+    window.electron.on('update-not-available', handleUpdateNotAvailable)
+    window.electron.on('update-download-progress', handleDownloadProgress)
+    window.electron.on('update-downloaded', handleUpdateDownloaded)
+    window.electron.on('update-error', handleUpdateError)
 
     return () => {
+      clearTimeout(timeoutId)
       window.electron.off('update-available', handleUpdateAvailable)
-      window.electron.off('update-download-progress', () => {})
-      window.electron.off('update-downloaded', () => {})
-      window.electron.off('update-error', () => {})
+      window.electron.off('update-not-available', handleUpdateNotAvailable)
+      window.electron.off('update-download-progress', handleDownloadProgress)
+      window.electron.off('update-downloaded', handleUpdateDownloaded)
+      window.electron.off('update-error', handleUpdateError)
     }
-  }, [open])
+  }, [open, status])
 
   const handleDownload = () => {
     setStatus('downloading')
+    window.api.downloadUpdate()
   }
 
   const handleInstall = () => {
@@ -90,6 +118,7 @@ export function UpdateDialog({ open, onClose }: UpdateDialogProps) {
               {status === 'available' && '发现新版本'}
               {status === 'downloading' && '下载中...'}
               {status === 'downloaded' && '下载完成'}
+              {status === 'upToDate' && '已是最新版本'}
               {status === 'error' && '更新检查失败'}
             </h3>
           </div>
@@ -211,7 +240,7 @@ export function UpdateDialog({ open, onClose }: UpdateDialogProps) {
           {status === 'error' && (
             <div className="flex flex-col items-center py-4">
               <p className="text-sm text-[var(--color-error)] mb-3">
-                检查更新失败，请稍后重试
+                {status === 'error' ? '检查更新失败，请稍后重试' : '开发环境无法检查更新'}
               </p>
               <button
                 onClick={() => {
@@ -222,6 +251,20 @@ export function UpdateDialog({ open, onClose }: UpdateDialogProps) {
               >
                 重新检查
               </button>
+            </div>
+          )}
+
+          {status === 'upToDate' && (
+            <div className="flex flex-col items-center py-6">
+              <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
+                <CheckCircle className="h-6 w-6 text-green-600" />
+              </div>
+              <p className="text-sm text-[var(--color-foreground)] mb-1">
+                当前是最新版本
+              </p>
+              <p className="text-xs text-[var(--color-muted-foreground)]">
+                v{updateInfo?.version || '1.0.0'}
+              </p>
             </div>
           )}
         </div>

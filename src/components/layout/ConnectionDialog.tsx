@@ -131,10 +131,10 @@ export function ConnectionDialog({ onClose }: ConnectionDialogProps) {
               <p className="text-xs text-[var(--color-muted-foreground)]">Configure your database connection</p>
             </div>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-8 w-8 hover:bg-gray-100" 
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-gray-100"
             onClick={onClose}
           >
             <X className="h-4 w-4" />
@@ -267,7 +267,7 @@ export function ConnectionDialog({ onClose }: ConnectionDialogProps) {
                     type="password"
                     value={config.password}
                     onChange={(e) => setConfig({ ...config, password: e.target.value })}
-                    placeholder="••••••••"
+                    placeholder="password"
                     className="border-gray-200 focus:border-[var(--color-primary)]"
                   />
                 </div>
@@ -288,11 +288,10 @@ export function ConnectionDialog({ onClose }: ConnectionDialogProps) {
 
               {testResult && (
                 <div
-                  className={`rounded-lg p-3 text-sm border transition-colors ${
-                    testResult.success
+                  className={`rounded-lg p-3 text-sm border transition-colors ${testResult.success
                       ? 'bg-green-50 text-green-700 border-green-200'
                       : 'bg-red-50 text-red-700 border-red-200'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-2">
                     {testResult.success ? (
@@ -316,16 +315,16 @@ export function ConnectionDialog({ onClose }: ConnectionDialogProps) {
             </div>
 
             <div className="flex justify-end gap-2 pt-4 border-t border-gray-100">
-              <Button 
-                variant="outline" 
-                onClick={handleTest} 
+              <Button
+                variant="outline"
+                onClick={handleTest}
                 disabled={isTesting}
               >
                 {isTesting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Test Connection
               </Button>
-              <Button 
-                onClick={handleConnect} 
+              <Button
+                onClick={handleConnect}
                 disabled={isConnecting}
                 className="bg-[var(--color-postgres-blue)] hover:bg-[var(--color-postgres-blue)]/90 text-white"
               >

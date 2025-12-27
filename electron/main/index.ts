@@ -57,6 +57,9 @@ function setupAutoUpdater(): void {
   // 更新事件处理
   autoUpdater.on('error', (error) => {
     console.log('更新错误:', error)
+    if (mainWindow) {
+      mainWindow.webContents.send('update-error', error.message || error)
+    }
   })
 
   autoUpdater.on('checking-for-update', () => {
@@ -72,6 +75,9 @@ function setupAutoUpdater(): void {
 
   autoUpdater.on('update-not-available', (info) => {
     console.log('当前是最新版本:', info.version)
+    if (mainWindow) {
+      mainWindow.webContents.send('update-not-available', info)
+    }
   })
 
   autoUpdater.on('download-progress', (progressObj) => {
@@ -90,13 +96,30 @@ function setupAutoUpdater(): void {
 
 // IPC 处理更新相关请求
 ipcMain.handle('check-for-updates', async () => {
+  if (is.dev) {
+    // 开发环境模拟返回"已是最新版本"
+    if (mainWindow) {
+      mainWindow.webContents.send('update-not-available', {
+        version: app.getVersion(),
+      })
+    }
+    return
+  }
+  await autoUpdater.checkForUpdates()
+})
+
+ipcMain.handle('download-update', async () => {
   if (!is.dev) {
-    await autoUpdater.checkForUpdates()
+    await autoUpdater.downloadUpdate()
   }
 })
 
 ipcMain.handle('quit-and-install', () => {
-  autoUpdater.quitAndInstall()
+  // 使用 setImmediate 确保 IPC 响应完成后再退出
+  setImmediate(() => {
+    app.removeAllListeners('window-all-closed')
+    autoUpdater.quitAndInstall()
+  })
 })
 
 // 设置 IPC 处理器

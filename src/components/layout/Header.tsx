@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useConnectionStore } from '@/stores/connectionStore'
 import { useQueryStore } from '@/stores/queryStore'
 import { Button } from '@/components/ui/button'
@@ -8,9 +7,7 @@ import {
   Square,
   Loader2,
   Unplug,
-  RotateCw,
 } from 'lucide-react'
-import { UpdateDialog } from './UpdateDialog'
 
 interface HeaderProps {
   onConnectClick: () => void
@@ -19,7 +16,6 @@ interface HeaderProps {
 export function Header({ onConnectClick }: HeaderProps) {
   const { status, serverVersion, disconnect } = useConnectionStore()
   const { execute, cancel, isExecuting, sql } = useQueryStore()
-  const [showUpdateDialog, setShowUpdateDialog] = useState(false)
 
   const getStatusColor = () => {
     switch (status) {
@@ -55,7 +51,7 @@ export function Header({ onConnectClick }: HeaderProps) {
             <Database className="h-4 w-4" />
           </div>
           <div>
-            <span className="font-semibold text-[var(--color-foreground)] tracking-tight">PostgreSQL Client</span>
+            <span className="font-semibold text-[var(--color-foreground)] tracking-tight">Calf</span>
             <div className="flex items-center gap-2">
               <div className={`h-2 w-2 rounded-full ${getStatusColor()} shadow-sm`} />
               <span className="text-xs text-[var(--color-muted-foreground)]">
@@ -95,14 +91,6 @@ export function Header({ onConnectClick }: HeaderProps) {
             <Button 
               size="sm" 
               variant="outline" 
-              onClick={() => setShowUpdateDialog(true)}
-            >
-              <RotateCw className="mr-2 h-4 w-4" />
-              Update
-            </Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
               onClick={disconnect}
             >
               <Unplug className="mr-2 h-4 w-4" />
@@ -110,28 +98,16 @@ export function Header({ onConnectClick }: HeaderProps) {
             </Button>
           </>
         ) : (
-          <>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={() => setShowUpdateDialog(true)}
-            >
-              <RotateCw className="mr-2 h-4 w-4" />
-              Update
-            </Button>
-            <Button 
-              size="sm" 
-              onClick={onConnectClick}
-              className="bg-[var(--color-postgres-blue)] hover:bg-[var(--color-postgres-blue)]/90 text-white shadow-sm"
-            >
-              <Database className="mr-2 h-4 w-4" />
-              Connect
-            </Button>
-          </>
+          <Button 
+            size="sm" 
+            onClick={onConnectClick}
+            className="bg-[var(--color-postgres-blue)] hover:bg-[var(--color-postgres-blue)]/90 text-white shadow-sm"
+          >
+            <Database className="mr-2 h-4 w-4" />
+            Connect
+          </Button>
         )}
       </div>
-
-      <UpdateDialog open={showUpdateDialog} onClose={() => setShowUpdateDialog(false)} />
     </header>
   )
 }

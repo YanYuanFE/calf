@@ -16,6 +16,7 @@ interface ConnectionState {
   connect: (config: ConnectionConfig) => Promise<void>
   disconnect: () => Promise<void>
   testConnection: (config: ConnectionConfig) => Promise<boolean>
+  handleConnectionStatusChange: (status: { connected: boolean; serverVersion?: string; reason?: string }) => void
 }
 
 export const useConnectionStore = create<ConnectionState>((set) => ({
@@ -23,6 +24,24 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
   status: 'disconnected',
   serverVersion: null,
   error: null,
+
+  handleConnectionStatusChange: (status) => {
+    if (status.connected) {
+      set({
+        status: 'connected',
+        serverVersion: status.serverVersion || null,
+        error: null,
+      })
+    } else {
+      set({
+        status: 'disconnected',
+        serverVersion: null,
+        error: status.reason || 'Connection lost',
+      })
+      useQueryStore.getState().clear()
+      useSchemaStore.getState().clear()
+    }
+  },
 
   connect: async (config: ConnectionConfig) => {
     set({ status: 'connecting', error: null })
@@ -55,15 +74,12 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
     try {
       await window.api.disconnect()
     } finally {
-      // 清空连接状态
       set({
         config: null,
         status: 'disconnected',
         serverVersion: null,
         error: null,
       })
-
-      // 清空查询和 Schema
       useQueryStore.getState().clear()
       useSchemaStore.getState().clear()
     }

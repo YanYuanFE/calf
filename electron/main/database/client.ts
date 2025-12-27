@@ -1,3 +1,4 @@
+import { app, ipcMain, webContents } from 'electron'
 import { Client } from 'pg'
 import type {
   ConnectionConfig,
@@ -6,10 +7,23 @@ import type {
   FieldInfo
 } from '../../shared/constants'
 
+// 连接状态变化通知通道
+const CONNECTION_STATUS_CHANNEL = 'db:connection:status'
+
 class DatabaseClient {
   private client: Client | null = null
   private isConnecting = false
   private reconnectTimer: NodeJS.Timeout | null = null
+
+  private notifyConnectionLost() {
+    // 通知所有渲染进程连接已断开
+    webContents.getAllWebContents().forEach(wc => {
+      wc.send(CONNECTION_STATUS_CHANNEL, {
+        connected: false,
+        reason: 'Connection to database was lost'
+      })
+    })
+  }
 
   async connect(config: ConnectionConfig): Promise<ConnectionResult> {
     if (this.isConnecting) {
@@ -48,6 +62,14 @@ class DatabaseClient {
       const result = await this.client.query('SELECT version()')
       const serverVersion = result.rows[0]?.version as string
 
+      // 通知连接成功
+      webContents.getAllWebContents().forEach(wc => {
+        wc.send(CONNECTION_STATUS_CHANNEL, {
+          connected: true,
+          serverVersion
+        })
+      })
+
       return {
         success: true,
         serverVersion,
@@ -69,6 +91,7 @@ class DatabaseClient {
       clearTimeout(this.reconnectTimer)
       this.reconnectTimer = null
     }
+    this.notifyConnectionLost()
   }
 
   async disconnect(): Promise<void> {

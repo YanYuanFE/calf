@@ -62,6 +62,7 @@ export interface IpcApi {
 
   // 更新检查
   checkForUpdates: () => Promise<void>
+  downloadUpdate: () => Promise<void>
   quitAndInstall: () => Promise<void>
 }
 

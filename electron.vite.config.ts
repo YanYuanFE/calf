@@ -2,6 +2,9 @@ import { resolve } from 'path'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/postcss'
+import fs from 'fs'
+
+const packageJson = JSON.parse(fs.readFileSync(resolve(__dirname, 'package.json'), 'utf-8'))
 
 export default defineConfig({
   main: {
@@ -47,6 +50,9 @@ export default defineConfig({
       postcss: {
         plugins: [tailwindcss()]
       }
+    },
+    define: {
+      'import.meta.env.VITE_APP_VERSION': JSON.stringify(packageJson.version)
     }
   }
 })

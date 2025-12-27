@@ -10,6 +10,7 @@ import {
 } from '@tanstack/react-table'
 import { useQueryStore } from '@/stores/queryStore'
 import { useConnectionStore } from '@/stores/connectionStore'
+import type { FieldInfo } from '@/types/database'
 import { Button } from '@/components/ui/button'
 import {
   ChevronLeft,
@@ -23,11 +24,58 @@ import {
   Loader2,
 } from 'lucide-react'
 
+interface CellModalProps {
+  value: string
+  fieldName: string
+  onClose: () => void
+}
+
+function CellModal({ value, fieldName, onClose }: CellModalProps) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(value)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 shrink-0">
+          <div>
+            <h3 className="font-semibold text-gray-900">{fieldName}</h3>
+            <p className="text-xs text-gray-500">点击单元格查看完整内容</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCopy}
+              className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded"
+            >
+              {copied ? '已复制' : '复制'}
+            </button>
+            <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
+              ✕
+            </button>
+          </div>
+        </div>
+        <div className="flex-1 overflow-auto p-4 min-h-[200px]">
+          <pre className="bg-gray-50 p-4 rounded-lg text-sm font-mono whitespace-pre-wrap break-word">
+            {value}
+          </pre>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function ResultTable() {
   const { result } = useQueryStore()
   const { connect, config } = useConnectionStore()
   const [isReconnecting, setIsReconnecting] = useState(false)
   const [sorting, setSorting] = useState<SortingState>([])
+  const [modalInfo, setModalInfo] = useState<{ value: string; fieldName: string } | null>(null)
 
   const isConnectionError = useMemo(() => {
     if (!result?.error) return false
@@ -52,32 +100,46 @@ export function ResultTable() {
   const columns = useMemo<ColumnDef<Record<string, unknown>>[]>(() => {
     if (!result?.fields) return []
 
-    return result.fields.map((field) => ({
+    return result.fields.map((field: FieldInfo) => ({
       accessorKey: field.name,
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="-ml-3 h-8 data-[state=open]:bg-accent"
+      header: ({ column }: { column: { toggleSorting: (asc?: boolean) => void; getIsSorted: () => string | false } }) => (
+        <button
+          className="flex items-center gap-1 hover:bg-gray-100 rounded px-1 -ml-1 py-0.5 text-xs font-semibold"
           onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
-          {field.name}
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+          <span className="truncate max-w-[80px]">{field.name}</span>
+          <ArrowUpDown className="h-3 w-3 text-gray-400 flex-shrink-0" />
+        </button>
       ),
-      cell: ({ getValue }) => {
+      cell: ({ getValue }: { getValue: () => unknown }) => {
         const value = getValue()
+        const displayValue = value === null 
+          ? 'NULL' 
+          : typeof value === 'object' 
+            ? JSON.stringify(value) 
+            : String(value)
+        
+        const handleClick = () => {
+          if (value !== null) {
+            setModalInfo({ value: displayValue, fieldName: field.name })
+          }
+        }
+
         if (value === null) {
           return <span className="text-[var(--color-muted-foreground)] italic">NULL</span>
         }
-        if (typeof value === 'object') {
-          return (
-            <span className="text-xs font-mono">
-              {JSON.stringify(value)}
-            </span>
-          )
-        }
-        return String(value)
+        
+        const isLong = displayValue.length > 100
+
+        return (
+          <div 
+            onClick={handleClick}
+            className={`cursor-pointer hover:bg-gray-100 rounded px-1 -mx-1 py-0.5 ${isLong ? 'text-[var(--color-muted-foreground)]' : ''}`}
+            title={displayValue}
+          >
+            {isLong ? displayValue.slice(0, 100) + '...' : displayValue}
+          </div>
+        )
       },
     }))
   }, [result?.fields])
@@ -164,22 +226,29 @@ export function ResultTable() {
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <div className="flex-1 overflow-auto">
-        <div className="min-w-max">
-          <table className="w-full text-sm border-collapse">
+        <div className="min-w-0">
+          <table className="w-full text-sm border-collapse table-fixed">
+            <colgroup>
+              {result.fields?.map((_: FieldInfo, i: number) => (
+                <col key={i} className="min-w-[120px] max-w-[300px]" />
+              ))}
+            </colgroup>
             <thead className="sticky top-0 bg-gray-50 z-10">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
                     <th
                       key={header.id}
-                      className="px-4 py-2.5 text-left font-semibold text-[var(--color-foreground)] bg-gray-50 border-b border-gray-200 min-w-[150px]"
+                      className="px-4 py-2.5 text-left font-semibold text-[var(--color-foreground)] bg-gray-50 border-b border-gray-200 max-w-[300px] overflow-hidden"
                     >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                      <div className="truncate" title={header.column.columnDef.header as string}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </div>
                     </th>
                   ))}
                 </tr>
@@ -194,8 +263,12 @@ export function ResultTable() {
                   }`}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-4 py-2.5 min-w-[150px] max-w-[400px] truncate">
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    <td key={cell.id} className="px-4 py-2.5 max-w-[300px] overflow-hidden">
+                      <div className="min-w-0">
+                        <div className="truncate" title={String(flexRender(cell.column.columnDef.cell, cell.getContext()) ?? '')}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </div>
+                      </div>
                     </td>
                   ))}
                 </tr>
@@ -253,6 +326,14 @@ export function ResultTable() {
           </Button>
         </div>
       </div>
+
+      {modalInfo && (
+        <CellModal
+          value={modalInfo.value}
+          fieldName={modalInfo.fieldName}
+          onClose={() => setModalInfo(null)}
+        />
+      )}
     </div>
   )
 }

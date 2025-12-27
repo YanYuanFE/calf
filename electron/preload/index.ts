@@ -71,6 +71,7 @@ contextBridge.exposeInMainWorld('api', {
 
   // 更新检查
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  downloadUpdate: () => ipcRenderer.invoke('download-update'),
   quitAndInstall: () => ipcRenderer.invoke('quit-and-install'),
 })
 

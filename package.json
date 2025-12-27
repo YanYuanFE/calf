@@ -1,6 +1,6 @@
 {
-  "name": "postgresql-app",
-  "version": "1.0.0",
+  "name": "calf",
+  "version": "1.0.3",
   "description": "A lightweight PostgreSQL client built with Electron",
   "main": "./out/main/index.js",
   "scripts": {
@@ -71,8 +71,8 @@
     "zustand": "^5.0.9"
   },
   "build": {
-    "appId": "com.postgresql-app",
-    "productName": "PostgreSQL Client",
+    "appId": "com.calf",
+    "productName": "Calf",
     "directories": {
       "output": "release"
     },
@@ -82,18 +82,16 @@
     "icon": "build/icon",
     "mac": {
       "category": "public.app-category.developer-tools",
-      "sign": false,
       "icon": "build/icon.icns"
     },
     "win": {
       "target": "nsis",
-      "sign": false,
       "icon": "build/icon.ico"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "icon": "build/icon.ico"
+      "installerIcon": "build/icon.ico"
     },
     "linux": {
       "target": "AppImage",
@@ -101,8 +99,9 @@
     },
     "publish": {
       "provider": "github",
-      "owner": "your-username",
-      "repo": "postgresql-app"
+      "owner": "YanYuanFE",
+      "repo": "calf",
+      "private": true
     }
   }
 }
