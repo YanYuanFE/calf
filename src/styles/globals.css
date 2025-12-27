@@ -1,0 +1,234 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #ffffff;
+  --color-foreground: #1a1f36;
+  --color-card: #ffffff;
+  --color-card-foreground: #1a1f36;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #1a1f36;
+  --color-primary: #336791;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #f4f5f7;
+  --color-secondary-foreground: #1a1f36;
+  --color-muted: #f7f8fa;
+  --color-muted-foreground: #6b7280;
+  --color-accent: #f0f4ff;
+  --color-accent-foreground: #336791;
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #ffffff;
+  --color-border: #e5e7eb;
+  --color-input: #ffffff;
+  --color-ring: #336791;
+
+  --color-postgres-blue: #336791;
+  --color-postgres-blue-light: #4a7a9f;
+  --color-postgres-green: #22c55e;
+  --color-postgres-orange: #f97316;
+  --color-postgres-purple: #8b5cf6;
+  --color-postgres-cyan: #06b6d4;
+  --color-postgres-pink: #ec4899;
+
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #dc2626;
+  --color-info: #3b82f6;
+
+  --color-chart-1: #336791;
+  --color-chart-2: #22c55e;
+  --color-chart-3: #f97316;
+  --color-chart-4: #8b5cf6;
+  --color-chart-5: #ec4899;
+
+  --color-sidebar: #fafbfc;
+  --color-sidebar-foreground: #1a1f36;
+  --color-sidebar-primary: #336791;
+  --color-sidebar-primary-foreground: #ffffff;
+  --color-sidebar-accent: #f0f4ff;
+  --color-sidebar-accent-foreground: #336791;
+  --color-sidebar-border: #e5e7eb;
+  --color-sidebar-ring: #336791;
+
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.25rem;
+
+  --shadow-xs: 0 1px 1px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05), 0 1px 3px 0 rgb(0 0 0 / 0.03);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.04);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.04);
+}
+
+* {
+  @apply border-border;
+}
+
+button,
+[role="button"] {
+  cursor: pointer;
+}
+
+body {
+  @apply bg-background text-foreground;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::selection {
+  background: #336791;
+  color: #ffffff;
+}
+
+:focus-visible {
+  outline: 2px solid #336791;
+  outline-offset: 2px;
+}
+
+.text-rendering-auto {
+  text-rendering: auto;
+}
+
+.text-rendering-optimize {
+  text-rendering: optimizeLegibility;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.25s ease-out;
+}
+
+.animate-slideInLeft {
+  animation: slideInLeft 0.25s ease-out;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.bg-postgres-gradient {
+  background: linear-gradient(135deg, #336791, #8b5cf6);
+}
+
+.text-postgres-gradient {
+  background: linear-gradient(135deg, #336791, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.border-postgres-gradient {
+  border-image: linear-gradient(135deg, #336791, #8b5cf6) 1;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.hover-lift-sm {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.hover-lift-sm:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
