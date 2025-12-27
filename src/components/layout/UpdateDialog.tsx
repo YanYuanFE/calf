@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { X, Download, Loader2, ArrowDownCircle, CheckCircle } from 'lucide-react'
+import { useEffect, useState, useRef } from 'react'
+import { X, Loader2, ArrowDownCircle, CheckCircle, ExternalLink, Download } from 'lucide-react'
 
 interface UpdateInfo {
   version: string
@@ -10,6 +10,9 @@ interface UpdateInfo {
   releaseDate: string
   releaseName: string
 }
+
+// GitHub Release 下载地址
+const GITHUB_RELEASE_URL = 'https://github.com/YanYuanFE/calf/releases/latest'
 
 interface UpdateDialogProps {
   open: boolean
@@ -30,13 +33,23 @@ export function UpdateDialog({ open, onClose }: UpdateDialogProps) {
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
   const [downloadProgress, setDownloadProgress] = useState(0)
   const [status, setStatus] = useState<'checking' | 'available' | 'downloading' | 'downloaded' | 'error' | 'upToDate'>('checking')
+  const statusRef = useRef(status)
+
+  // 保持 statusRef 同步
+  useEffect(() => {
+    statusRef.current = status
+  }, [status])
 
   useEffect(() => {
     if (!open) return
 
+    // 重置状态
+    setStatus('checking')
+    setDownloadProgress(0)
+
     // 超时处理：10秒后显示错误
     const timeoutId = setTimeout(() => {
-      if (status === 'checking') {
+      if (statusRef.current === 'checking') {
         setStatus('error')
       }
     }, 10000)
@@ -91,7 +104,7 @@ export function UpdateDialog({ open, onClose }: UpdateDialogProps) {
       window.electron.off('update-downloaded', handleUpdateDownloaded)
       window.electron.off('update-error', handleUpdateError)
     }
-  }, [open, status])
+  }, [open])
 
   const handleDownload = () => {
     setStatus('downloading')
@@ -157,16 +170,24 @@ export function UpdateDialog({ open, onClose }: UpdateDialogProps) {
               <p className="text-sm text-[var(--color-muted-foreground)]">
                 发布时间: {new Date(updateInfo.releaseDate).toLocaleDateString('zh-CN')}
               </p>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2">
                 <button
                   onClick={handleDownload}
-                  className="flex-1 bg-[var(--color-postgres-blue)] hover:bg-[var(--color-postgres-blue)]/90 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors"
+                  className="flex items-center justify-center gap-2 bg-[var(--color-postgres-blue)] hover:bg-[var(--color-postgres-blue)]/90 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors"
                 >
-                  下载更新
+                  <Download className="h-4 w-4" />
+                  自动下载更新
+                </button>
+                <button
+                  onClick={() => window.open(GITHUB_RELEASE_URL, '_blank')}
+                  className="flex items-center justify-center gap-2 border border-gray-200 hover:bg-gray-50 py-2 px-4 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  手动下载
                 </button>
                 <button
                   onClick={onClose}
-                  className="flex-1 border border-gray-200 hover:bg-gray-50 py-2 px-4 rounded-lg text-sm font-medium transition-colors"
+                  className="text-sm text-[var(--color-muted-foreground)] hover:text-[var(--color-foreground)] transition-colors"
                 >
                   稍后
                 </button>
@@ -211,7 +232,7 @@ export function UpdateDialog({ open, onClose }: UpdateDialogProps) {
             <div className="space-y-4">
               <div className="flex flex-col items-center py-4">
                 <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
-                  <Download className="h-6 w-6 text-green-600" />
+                  <CheckCircle className="h-6 w-6 text-green-600" />
                 </div>
                 <p className="text-sm text-[var(--color-muted-foreground)]">
                   更新已下载完成
