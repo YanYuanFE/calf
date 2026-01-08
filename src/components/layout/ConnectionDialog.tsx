@@ -62,6 +62,7 @@ export function ConnectionDialog({ onClose }: ConnectionDialogProps) {
     message: string
   } | null>(null)
   const [urlError, setUrlError] = useState<string | null>(null)
+  const [rememberPassword, setRememberPassword] = useState(false)
 
   const handleUrlChange = (url: string) => {
     setConnectionUrl(url)
@@ -79,7 +80,7 @@ export function ConnectionDialog({ onClose }: ConnectionDialogProps) {
   const handleConnect = async () => {
     await connect(config)
     if (useConnectionStore.getState().status === 'connected') {
-      addConnection(config)
+      addConnection(config, rememberPassword)
       onClose?.()
     }
   }
@@ -96,22 +97,28 @@ export function ConnectionDialog({ onClose }: ConnectionDialogProps) {
   }
 
   const handleSelectRecent = (recent: RecentConnection) => {
-    setConfig({ ...recent.config, password: '' })
+    // 如果有保存的密码，自动填充
+    const savedPassword = recent.savedPassword || ''
+    setConfig({ ...recent.config, password: savedPassword })
+    setRememberPassword(!!recent.savedPassword)
     setConnectionUrl('')
     setTestResult(null)
   }
 
   const handleQuickConnect = async (recent: RecentConnection) => {
-    // 如果没有密码，需要用户输入
-    if (!config.password && recent.config.host === config.host) {
-      // 当前选中的就是这个连接，直接连接
-      await connect(config)
+    // 使用保存的密码或当前输入的密码
+    const passwordToUse = recent.savedPassword || config.password
+    const configWithPassword = { ...recent.config, password: passwordToUse }
+
+    if (passwordToUse || recent.config.host === config.host) {
+      // 有密码可用，直接连接
+      await connect(configWithPassword)
       if (useConnectionStore.getState().status === 'connected') {
-        addConnection(config)
+        addConnection(configWithPassword, !!recent.savedPassword || rememberPassword)
         onClose?.()
       }
     } else {
-      // 选中这个连接
+      // 没有密码，选中这个连接让用户输入
       handleSelectRecent(recent)
     }
   }
@@ -273,24 +280,39 @@ export function ConnectionDialog({ onClose }: ConnectionDialogProps) {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100">
-                <input
-                  type="checkbox"
-                  id="ssl"
-                  checked={config.ssl}
-                  onChange={(e) => setConfig({ ...config, ssl: e.target.checked })}
-                  className="rounded border-gray-300 text-[var(--color-primary)] focus:ring-[var(--color-primary)]/20"
-                />
-                <label htmlFor="ssl" className="text-sm font-medium text-[var(--color-foreground)] cursor-pointer">
-                  Use SSL connection
-                </label>
+              <div className="flex items-center gap-4 p-3 rounded-lg bg-gray-50 border border-gray-100">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="ssl"
+                    checked={config.ssl}
+                    onChange={(e) => setConfig({ ...config, ssl: e.target.checked })}
+                    className="rounded border-gray-300 text-[var(--color-primary)] focus:ring-[var(--color-primary)]/20"
+                  />
+                  <label htmlFor="ssl" className="text-sm font-medium text-[var(--color-foreground)] cursor-pointer">
+                    Use SSL connection
+                  </label>
+                </div>
+                <div className="w-px h-4 bg-gray-200" />
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="rememberPassword"
+                    checked={rememberPassword}
+                    onChange={(e) => setRememberPassword(e.target.checked)}
+                    className="rounded border-gray-300 text-[var(--color-primary)] focus:ring-[var(--color-primary)]/20"
+                  />
+                  <label htmlFor="rememberPassword" className="text-sm font-medium text-[var(--color-foreground)] cursor-pointer">
+                    Remember Password
+                  </label>
+                </div>
               </div>
 
               {testResult && (
                 <div
                   className={`rounded-lg p-3 text-sm border transition-colors ${testResult.success
-                      ? 'bg-green-50 text-green-700 border-green-200'
-                      : 'bg-red-50 text-red-700 border-red-200'
+                    ? 'bg-green-50 text-green-700 border-green-200'
+                    : 'bg-red-50 text-red-700 border-red-200'
                     }`}
                 >
                   <div className="flex items-center gap-2">

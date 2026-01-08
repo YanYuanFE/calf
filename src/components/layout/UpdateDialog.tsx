@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { X, Loader2, ArrowDownCircle, CheckCircle, ExternalLink, Download } from 'lucide-react'
+import { X, Loader2, ArrowDownCircle, CheckCircle, ExternalLink } from 'lucide-react'
 
 interface UpdateInfo {
   version: string
@@ -31,8 +31,7 @@ declare global {
 
 export function UpdateDialog({ open, onClose }: UpdateDialogProps) {
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
-  const [downloadProgress, setDownloadProgress] = useState(0)
-  const [status, setStatus] = useState<'checking' | 'available' | 'downloading' | 'downloaded' | 'error' | 'upToDate'>('checking')
+  const [status, setStatus] = useState<'checking' | 'available' | 'error' | 'upToDate'>('checking')
   const statusRef = useRef(status)
 
   // 保持 statusRef 同步
@@ -45,7 +44,6 @@ export function UpdateDialog({ open, onClose }: UpdateDialogProps) {
 
     // 重置状态
     setStatus('checking')
-    setDownloadProgress(0)
 
     // 超时处理：10秒后显示错误
     const timeoutId = setTimeout(() => {
@@ -74,17 +72,6 @@ export function UpdateDialog({ open, onClose }: UpdateDialogProps) {
       }
     }
 
-    const handleDownloadProgress = (..._args: unknown[]) => {
-      const progress = _args[1] as { percent: number } | undefined
-      if (progress) {
-        setDownloadProgress(Math.round(progress.percent))
-      }
-    }
-
-    const handleUpdateDownloaded = () => {
-      setStatus('downloaded')
-    }
-
     const handleUpdateError = () => {
       clearTimeout(timeoutId)
       setStatus('error')
@@ -92,27 +79,18 @@ export function UpdateDialog({ open, onClose }: UpdateDialogProps) {
 
     window.electron.on('update-available', handleUpdateAvailable)
     window.electron.on('update-not-available', handleUpdateNotAvailable)
-    window.electron.on('update-download-progress', handleDownloadProgress)
-    window.electron.on('update-downloaded', handleUpdateDownloaded)
     window.electron.on('update-error', handleUpdateError)
 
     return () => {
       clearTimeout(timeoutId)
       window.electron.off('update-available', handleUpdateAvailable)
       window.electron.off('update-not-available', handleUpdateNotAvailable)
-      window.electron.off('update-download-progress', handleDownloadProgress)
-      window.electron.off('update-downloaded', handleUpdateDownloaded)
       window.electron.off('update-error', handleUpdateError)
     }
   }, [open])
 
-  const handleDownload = () => {
-    setStatus('downloading')
-    window.api.downloadUpdate()
-  }
-
-  const handleInstall = () => {
-    window.api.quitAndInstall()
+  const handleOpenDownloadPage = () => {
+    window.api.openDownloadPage(GITHUB_RELEASE_URL)
   }
 
   if (!open) return null
@@ -129,8 +107,6 @@ export function UpdateDialog({ open, onClose }: UpdateDialogProps) {
             <h3 className="font-semibold">
               {status === 'checking' && '检查更新...'}
               {status === 'available' && '发现新版本'}
-              {status === 'downloading' && '下载中...'}
-              {status === 'downloaded' && '下载完成'}
               {status === 'upToDate' && '已是最新版本'}
               {status === 'error' && '更新检查失败'}
             </h3>
@@ -156,7 +132,7 @@ export function UpdateDialog({ open, onClose }: UpdateDialogProps) {
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                  <Download className="h-5 w-5 text-green-600" />
+                  <ExternalLink className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
                   <p className="font-medium text-[var(--color-foreground)]">
@@ -172,18 +148,11 @@ export function UpdateDialog({ open, onClose }: UpdateDialogProps) {
               </p>
               <div className="flex flex-col gap-2">
                 <button
-                  onClick={handleDownload}
+                  onClick={handleOpenDownloadPage}
                   className="flex items-center justify-center gap-2 bg-[var(--color-postgres-blue)] hover:bg-[var(--color-postgres-blue)]/90 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors"
                 >
-                  <Download className="h-4 w-4" />
-                  自动下载更新
-                </button>
-                <button
-                  onClick={() => window.open(GITHUB_RELEASE_URL, '_blank')}
-                  className="flex items-center justify-center gap-2 border border-gray-200 hover:bg-gray-50 py-2 px-4 rounded-lg text-sm font-medium transition-colors"
-                >
                   <ExternalLink className="h-4 w-4" />
-                  手动下载
+                  前往下载页面
                 </button>
                 <button
                   onClick={onClose}
@@ -195,83 +164,29 @@ export function UpdateDialog({ open, onClose }: UpdateDialogProps) {
             </div>
           )}
 
-          {status === 'downloading' && (
-            <div className="space-y-4">
-              <div className="flex flex-col items-center py-4">
-                <div className="relative h-16 w-16">
-                  <svg className="transform -rotate-90" viewBox="0 0 36 36">
-                    <path
-                      className="text-gray-200"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      fill="none"
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                    <path
-                      className="text-[var(--color-primary)]"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      fill="none"
-                      strokeDasharray={`${downloadProgress}, 100`}
-                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    />
-                  </svg>
-                  <span className="absolute inset-0 flex items-center justify-center text-sm font-medium">
-                    {downloadProgress}%
-                  </span>
-                </div>
-                <p className="text-sm text-[var(--color-muted-foreground)] mt-2">
-                  正在下载 {updateInfo?.version}...
-                </p>
-              </div>
-            </div>
-          )}
-
-          {status === 'downloaded' && (
-            <div className="space-y-4">
-              <div className="flex flex-col items-center py-4">
-                <div className="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center mb-3">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
-                </div>
-                <p className="text-sm text-[var(--color-muted-foreground)]">
-                  更新已下载完成
-                </p>
-                <p className="text-xs text-[var(--color-muted-foreground)] mt-1">
-                  重启应用后即可使用新版本
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleInstall}
-                  className="flex-1 bg-[var(--color-postgres-blue)] hover:bg-[var(--color-postgres-blue)]/90 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors"
-                >
-                  重启并更新
-                </button>
-                <button
-                  onClick={onClose}
-                  className="flex-1 border border-gray-200 hover:bg-gray-50 py-2 px-4 rounded-lg text-sm font-medium transition-colors"
-                >
-                  下次重启
-                </button>
-              </div>
-            </div>
-          )}
-
           {status === 'error' && (
             <div className="flex flex-col items-center py-4">
               <p className="text-sm text-[var(--color-error)] mb-3">
-                {status === 'error' ? '检查更新失败，请稍后重试' : '开发环境无法检查更新'}
+                检查更新失败，请稍后重试
               </p>
-              <button
-                onClick={() => {
-                  setStatus('checking')
-                  window.api.checkForUpdates()
-                }}
-                className="text-sm text-[var(--color-primary)] hover:underline"
-              >
-                重新检查
-              </button>
+              <div className="flex flex-col gap-2 w-full">
+                <button
+                  onClick={() => {
+                    setStatus('checking')
+                    window.api.checkForUpdates()
+                  }}
+                  className="text-sm text-[var(--color-primary)] hover:underline"
+                >
+                  重新检查
+                </button>
+                <button
+                  onClick={handleOpenDownloadPage}
+                  className="flex items-center justify-center gap-2 border border-gray-200 hover:bg-gray-50 py-2 px-4 rounded-lg text-sm font-medium transition-colors"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  手动前往下载页面
+                </button>
+              </div>
             </div>
           )}
 

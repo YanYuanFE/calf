@@ -21,8 +21,6 @@ const IPC_CHANNELS = {
 const UPDATE_CHANNELS = [
   'update-available',
   'update-not-available',
-  'update-download-progress',
-  'update-downloaded',
   'update-error',
 ] as const
 
@@ -71,8 +69,7 @@ contextBridge.exposeInMainWorld('api', {
 
   // 更新检查
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
-  downloadUpdate: () => ipcRenderer.invoke('download-update'),
-  quitAndInstall: () => ipcRenderer.invoke('quit-and-install'),
+  openDownloadPage: (url: string) => ipcRenderer.invoke('open-download-page', url),
 })
 
 // 暴露更新事件监听器

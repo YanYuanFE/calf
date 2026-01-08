@@ -7,15 +7,17 @@ export interface RecentConnection {
   name: string
   config: ConnectionConfig
   lastUsed: number
+  savedPassword?: string  // 保存的密码（当用户选择记住密码时）
 }
 
 interface RecentConnectionsState {
   connections: RecentConnection[]
 
   // Actions
-  addConnection: (config: ConnectionConfig) => void
+  addConnection: (config: ConnectionConfig, savePassword?: boolean) => void
   removeConnection: (id: string) => void
   clearConnections: () => void
+  getSavedPassword: (id: string) => string | undefined
 }
 
 // 生成连接名称
@@ -33,7 +35,7 @@ export const useRecentConnectionsStore = create<RecentConnectionsState>()(
     (set, get) => ({
       connections: [],
 
-      addConnection: (config: ConnectionConfig) => {
+      addConnection: (config: ConnectionConfig, savePassword?: boolean) => {
         const id = generateConnectionId(config)
         const name = generateConnectionName(config)
         const now = Date.now()
@@ -46,8 +48,9 @@ export const useRecentConnectionsStore = create<RecentConnectionsState>()(
           const newConnection: RecentConnection = {
             id,
             name,
-            config: { ...config, password: '' }, // 不保存密码
+            config: { ...config, password: '' }, // 配置中不直接保存密码
             lastUsed: now,
+            savedPassword: savePassword ? config.password : undefined, // 根据用户选择保存密码
           }
 
           // 最多保留 10 个最近连接
@@ -65,6 +68,11 @@ export const useRecentConnectionsStore = create<RecentConnectionsState>()(
 
       clearConnections: () => {
         set({ connections: [] })
+      },
+
+      getSavedPassword: (id: string) => {
+        const connection = get().connections.find((c) => c.id === id)
+        return connection?.savedPassword
       },
     }),
     {

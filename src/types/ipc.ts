@@ -62,8 +62,7 @@ export interface IpcApi {
 
   // 更新检查
   checkForUpdates: () => Promise<void>
-  downloadUpdate: () => Promise<void>
-  quitAndInstall: () => Promise<void>
+  openDownloadPage: (url: string) => Promise<void>
 }
 
 // 扩展 Window 接口
